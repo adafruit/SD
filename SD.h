@@ -24,14 +24,43 @@
 #define FILE_TRUNCATE (O_WRITE | O_CREAT | O_TRUNC)
 #define FILE_APPEND (O_WRITE | O_CREAT | O_APPEND)
 
+// for reading directories and listing files
 class DirectoryEntry {
+ public:
+  DirectoryEntry(uint8_t *, uint32_t, bool);
+  DirectoryEntry(void);
+  operator bool() {
+    return _exists;
+  }
+  char *name(void) {
+    return _name;
+  }
+  uint32_t size(void) {
+    return _filesize;
+  }
+  boolean isDirectory(void) {
+    return _isDirectory;
+  }
 
+ private:
+  char _name[13];       // 8+3 add dot and terminating 0
+  uint32_t _filesize;
 
+  boolean _isDirectory;
+  boolean _exists;
 
-}
+};
 
 class File : public Stream {
+ private:
+  char _name[13];
+  SdFile _file;
+  int _c;
+
 public:
+  File(SdFile f, char *);
+  File(void);
+
   virtual void write(uint8_t);
   virtual void write(const char *str);
   virtual void write(const uint8_t *buf, size_t size);
@@ -44,17 +73,24 @@ public:
   virtual void flush();
   void close();
   operator bool();
+  boolean isDirectory();
+  void rewindDirectory();
+  DirectoryEntry readNextDirectoryEntry(void);
+  char *name(void);
 };
 
 class SDClass {
 
-private:
+ private:
+
+ public:
+  // we should expose these since the wrapper is so thin
+
   // These are required for initialisation and use of sdfatlib
+  SdFile root;
   Sd2Card card;
   SdVolume volume;
-  SdFile root;
   
-public:
   // This needs to be called to set up the connection to the SD card
   // before other methods are used.
   boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN);
@@ -76,8 +112,8 @@ public:
   
   boolean rmdir(char *filepath);
 
+
 private:
-  SdFile file;
 
   // This is used to determine the mode used to open a file
   // it's here because it's the easiest place to pass the 
