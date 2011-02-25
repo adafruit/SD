@@ -24,33 +24,6 @@
 #define FILE_TRUNCATE (O_WRITE | O_CREAT | O_TRUNC)
 #define FILE_APPEND (O_WRITE | O_CREAT | O_APPEND)
 
-// for reading directories and listing files
-class DirectoryEntry {
- public:
-  DirectoryEntry(uint8_t *, uint32_t, bool);
-  DirectoryEntry(void);
-  operator bool() {
-    return _exists;
-  }
-  char *name(void) {
-    return _name;
-  }
-  uint32_t size(void) {
-    return _filesize;
-  }
-  boolean isDirectory(void) {
-    return _isDirectory;
-  }
-
- private:
-  char _name[13];       // 8+3 add dot and terminating 0
-  uint32_t _filesize;
-
-  boolean _isDirectory;
-  boolean _exists;
-
-};
-
 class File : public Stream {
  private:
   char _name[13];
@@ -76,13 +49,15 @@ public:
   operator bool();
   boolean isDirectory();
   void rewindDirectory();
-  File openNextFile(void);
+  File openNextFile(uint8_t mode);
   char *name(void);
 };
 
 class SDClass {
 
  private:
+
+  SdFile getParentDir(char *filepath, int *indx);
 
  public:
   // we should expose these since the wrapper is so thin

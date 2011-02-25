@@ -389,6 +389,7 @@ uint8_t SdFile::open(SdFile* dirFile, const char* fileName, uint8_t oflag) {
   if (isOpen())return false;
 
   if (!make83Name(fileName, dname)) return false;
+
   vol_ = dirFile->vol_;
   dirFile->rewind();
 

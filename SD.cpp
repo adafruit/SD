@@ -50,6 +50,59 @@ boolean SDClass::begin(uint8_t csPin) {
          root.openRoot(volume);
 }
 
+// this little helper is used to traverse paths
+SdFile SDClass::getParentDir(char *filepath, int *index) {
+  // get parent directory
+  SdFile d1 = root; // start with the mostparent, root!
+  SdFile d2;
+
+  // we'll use the pointers to swap between the two objects
+  SdFile *parent = &d1;
+  SdFile *subdir = &d2;
+  
+  char *origpath = filepath;
+
+  while (strchr(filepath, '/')) {
+
+    // get rid of leading /'s
+    if (filepath[0] == '/') {
+      filepath++;
+      continue;
+    }
+    
+    if (! strchr(filepath, '/')) {
+      // it was in the root directory, so leave now
+      break;
+    }
+
+    // extract just the name of the next subdirectory
+    uint8_t idx = strchr(filepath, '/') - filepath;
+    char subdirname[12];
+    strncpy(subdirname, filepath, idx);
+    subdirname[idx] = 0;
+
+    // close the subdir (we reuse them) if open
+    subdir->close();
+    if (! subdir->open(parent, subdirname, O_READ)) {
+      // failed to open one of the subdirectories
+      return SdFile();
+    }
+    // move forward to the next subdirectory
+    filepath += idx;
+
+    // we reuse the objects, close it.
+    parent->close();
+
+    // swap the pointers
+    SdFile *t = parent;
+    parent = subdir;
+    subdir = t;
+  }
+
+  *index = (int)(filepath - origpath);
+  // parent is now the parent diretory of the file!
+  return *parent;
+}
 
 File SDClass::open(char *filepath, uint8_t mode) {
   /*
@@ -75,42 +128,28 @@ File SDClass::open(char *filepath, uint8_t mode) {
 
    */
 
-  // TODO: Allow for read&write? (Possibly not, as it requires seek.)
+  int pathidx;
 
-
-  // get parent directory
-  SdFile parent;
-
-  //fileOpenMode = mode;
-  //walkPath(filepath, root, callback_openPath, this);
-
-  Serial.print("Iterative directory search for ");
-  Serial.println(filepath);
-
-  if (strcmp(filepath, "/") == 0) {
-    Serial.println("Asked for root!");
-    return File(root, "/");
-  }
-  
-
-  
-  while (strchr(filepath, '/')) {
-    // get rid of leading /'s
-    if (filepath[0] == '/') {
-      filepath++;
-      continue;
-    }
-    
-    // some sort of subdir TODO
-    
-  }
+  // do the interative search
+  SdFile parentdir = getParentDir(filepath, &pathidx);
   // no more subdirs!
 
-  Serial.println(filepath);
+  filepath += pathidx;
 
-  //return File(&root, *filepath, mode);
-  return File(root, "/");
+  if (! filepath[0]) {
+    // it was the directory itself!
+    return File(parentdir, "/");
+  }
 
+  // Open the file itself
+  SdFile file;
+  
+  if (!parentdir.isOpen() || ! file.open(parentdir, filepath, mode)) {
+    // failed to open the final file itself or one of the subdirs
+    return File();
+  }
+  parentdir.close();
+  return File(file, filepath);
 }
 
 
@@ -130,7 +169,13 @@ boolean SDClass::exists(char *filepath) {
      Returns true if the supplied file path exists.
 
    */
-  //return walkPath(filepath, root, callback_pathExists);
+
+  File tester = open(filepath, O_RDONLY);
+  if (tester) {
+    tester.close();
+    return true;
+  }
+  return false;
 }
 
 
@@ -153,7 +198,32 @@ boolean SDClass::mkdir(char *filepath) {
     A rough equivalent to `mkdir -p`.
   
    */
+
+  /*
+  int pathidx;
+
+  // do the interative search
+  SdFile parentdir = getParentDir(filepath, &pathidx);
+  // no more subdirs!
+
+  filepath += pathidx;
+
+  if (! filepath[0]) {
+    // it was the directory itself!
+    return File(parentdir, "/");
+  }
+
+  // Open the file itself
+  SdFile file;
+  
+  if (!parentdir.isOpen() || ! file.open(parentdir, filepath, mode)) {
+    // failed to open the final file itself or one of the subdirs
+    return File();
+  }
+  parentdir.close();
+  return File(file, filepath);
   // return walkPath(filepath, root, callback_makeDirPath);
+  */
 }
 
 boolean SDClass::rmdir(char *filepath) {
@@ -172,7 +242,7 @@ boolean SDClass::remove(char *filepath) {
 }
 
 
-File File::openNextFile(void) {
+File File::openNextFile(uint8_t mode) {
   dir_t p;
 
   //Serial.print("\t\treading dir...");
@@ -203,7 +273,7 @@ File File::openNextFile(void) {
     //Serial.print("try to open file ");
     //Serial.println(name);
 
-    if (f.open(_file, name, O_READ)) {
+    if (f.open(_file, name, mode)) {
       //Serial.println("OK!");
       return File(f, name);    
     } else {
@@ -219,33 +289,6 @@ File File::openNextFile(void) {
 void File::rewindDirectory(void) {  
   if (isDirectory())
     _file.rewind();
-}
-
-DirectoryEntry::DirectoryEntry(void) {
-  _name[0] = 0;
-  _filesize = 0;
-  _exists = false;
-  _isDirectory = false;
-}
-
-DirectoryEntry::DirectoryEntry(uint8_t *n, uint32_t s, bool isdir) {
-  char *nameptr = _name;
-  for (uint8_t i=0; i<11; i++) {
-    if (n[i] == ' ')
-      continue;
-    if (i == 8) {
-      nameptr[0] = '.';
-      nameptr++;
-    }
-    nameptr[0] = n[i];
-    nameptr++;
-  }
-  nameptr[0] = 0;
-  _filesize = s;
-
-  _exists = true;
-
-  _isDirectory = isdir;
 }
 
 SDClass SD;
