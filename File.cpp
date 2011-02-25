@@ -14,15 +14,31 @@
 
 #include <SD.h>
 
+
 File::File(SdFile f, char *n) {
   _file = f;
   strncpy(_name, n, 12);
   _name[12] = 0;
   _c = -1;
+
+  /*
+  Serial.print("Created file object \"");
+  Serial.print(n);
+  Serial.println("\"");
+  */
 }
 
 File::File(void) {
   _c = -1;
+  //Serial.print("Created empty file object");
+}
+
+File::~File(void) {
+  /*if (_file) 
+    delete _file;
+  */
+
+  //  Serial.print("Deleted file object");
 }
 
 char *File::name(void) {

@@ -60,6 +60,7 @@ class File : public Stream {
 public:
   File(SdFile f, char *);
   File(void);
+  ~File(void);
 
   virtual void write(uint8_t);
   virtual void write(const char *str);
@@ -75,7 +76,7 @@ public:
   operator bool();
   boolean isDirectory();
   void rewindDirectory();
-  DirectoryEntry readNextDirectoryEntry(void);
+  File openNextFile(void);
   char *name(void);
 };
 

@@ -352,6 +352,9 @@ class SdFile : public Print {
   static uint8_t remove(SdFile& dirFile, const char* fileName) {  // NOLINT
     return remove(&dirFile, fileName);
   }
+
+  static uint8_t make83Name(const char* str, uint8_t* name);
+
 //------------------------------------------------------------------------------
 // rest are private
  private:
@@ -396,7 +399,6 @@ class SdFile : public Print {
   uint8_t addDirCluster(void);
   dir_t* cacheDirEntry(uint8_t action);
   static void (*dateTime_)(uint16_t* date, uint16_t* time);
-  static uint8_t make83Name(const char* str, uint8_t* name);
   uint8_t openCachedEntry(uint8_t cacheIndex, uint8_t oflags);
   dir_t* readDirCache(void);
 };

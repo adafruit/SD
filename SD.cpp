@@ -88,6 +88,7 @@ File SDClass::open(char *filepath, uint8_t mode) {
   Serial.println(filepath);
 
   if (strcmp(filepath, "/") == 0) {
+    Serial.println("Asked for root!");
     return File(root, "/");
   }
   
@@ -105,8 +106,10 @@ File SDClass::open(char *filepath, uint8_t mode) {
   }
   // no more subdirs!
 
+  Serial.println(filepath);
 
-  return File(SdFile(&root, *filepath, mode));
+  //return File(&root, *filepath, mode);
+  return File(root, "/");
 
 }
 
@@ -169,25 +172,48 @@ boolean SDClass::remove(char *filepath) {
 }
 
 
-DirectoryEntry File::readNextDirectoryEntry(void) {
+File File::openNextFile(void) {
   dir_t p;
 
+  //Serial.print("\t\treading dir...");
   while (_file.readDir(&p) > 0) {
+
     // done if past last used entry
-    if (p.name[0] == DIR_NAME_FREE)
-      return DirectoryEntry();
+    if (p.name[0] == DIR_NAME_FREE) {
+      //Serial.println("end");
+      return File();
+    }
 
     // skip deleted entry and entries for . and  ..
-    if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') continue;
+    if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') {
+      //Serial.println("dots");
+      continue;
+    }
 
     // only list subdirectories and files
-    if (!DIR_IS_FILE_OR_SUBDIR(&p)) continue;
+    if (!DIR_IS_FILE_OR_SUBDIR(&p)) {
+      //Serial.println("notafile");
+      continue;
+    }
 
     // print file name with possible blank fill
-    return DirectoryEntry(p.name, p.fileSize, DIR_IS_SUBDIR(&p));
+    SdFile f;
+    char name[12];
+    _file.dirName(p, name);
+    //Serial.print("try to open file ");
+    //Serial.println(name);
+
+    if (f.open(_file, name, O_READ)) {
+      //Serial.println("OK!");
+      return File(f, name);    
+    } else {
+      //Serial.println("ugh");
+      return File();
+    }
   }
 
-  return DirectoryEntry();
+  //Serial.println("nothing");
+  return File();
 }
 
 void File::rewindDirectory(void) {  
