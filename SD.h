@@ -27,7 +27,7 @@
 class File : public Stream {
  private:
   char _name[13];
-  SdFile _file;
+  SdFile *_file;
   int _c;
 
 public:
