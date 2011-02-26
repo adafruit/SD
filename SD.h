@@ -56,17 +56,15 @@ public:
 class SDClass {
 
  private:
-
-  SdFile getParentDir(char *filepath, int *indx);
-
- public:
-  // we should expose these since the wrapper is so thin
-
   // These are required for initialisation and use of sdfatlib
   SdFile root;
   Sd2Card card;
   SdVolume volume;
-  
+
+  // my quick&dirty iterator, should be replaced
+  SdFile getParentDir(char *filepath, int *indx);
+
+ public:
   // This needs to be called to set up the connection to the SD card
   // before other methods are used.
   boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN);

@@ -47,10 +47,6 @@ File::File(void) {
 }
 
 File::~File(void) {
-  /*if (_file) 
-    delete _file;
-  */
-
   //  Serial.print("Deleted file object");
 }
 
