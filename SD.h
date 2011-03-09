@@ -21,50 +21,33 @@
 #include <utility/SdFatUtil.h>
 
 #define FILE_READ O_READ
-#define FILE_TRUNCATE (O_WRITE | O_CREAT | O_TRUNC)
-#define FILE_APPEND (O_WRITE | O_CREAT | O_APPEND)
+#define FILE_WRITE (O_READ | O_WRITE | O_CREAT)
 
 class File : public Stream {
- private:
-  char _name[13];
-  SdFile *_file;
-  int _c;
-
 public:
-  File(SdFile f, char *);
-  File(void);
-  ~File(void);
-
   virtual void write(uint8_t);
   virtual void write(const char *str);
   virtual void write(const uint8_t *buf, size_t size);
   virtual int read();
-  virtual int read(void *buf, uint16_t nbyte);
   virtual int peek();
-  virtual boolean seekSet(uint32_t x);
-  virtual uint32_t size(void);
   virtual int available();
   virtual void flush();
+  boolean seek(uint32_t pos);
+  uint32_t position();
+  uint32_t size();
   void close();
   operator bool();
-  boolean isDirectory();
-  void rewindDirectory();
-  File openNextFile(uint8_t mode);
-  char *name(void);
 };
 
 class SDClass {
 
- private:
+private:
   // These are required for initialisation and use of sdfatlib
-  SdFile root;
   Sd2Card card;
   SdVolume volume;
-
-  // my quick&dirty iterator, should be replaced
-  SdFile getParentDir(char *filepath, int *indx);
-
- public:
+  SdFile root;
+  
+public:
   // This needs to be called to set up the connection to the SD card
   // before other methods are used.
   boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN);
@@ -86,8 +69,8 @@ class SDClass {
   
   boolean rmdir(char *filepath);
 
-
 private:
+  SdFile file;
 
   // This is used to determine the mode used to open a file
   // it's here because it's the easiest place to pass the 
@@ -95,8 +78,6 @@ private:
   // it's probably not the best place for it.
   // It shouldn't be set directly--it is set via the parameters to `open`.
   int fileOpenMode;
-  
-  int c;
   
   friend class File;
   friend boolean callback_openPath(SdFile&, char *, boolean, void *); 
