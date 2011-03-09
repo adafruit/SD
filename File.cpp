@@ -36,6 +36,11 @@ int File::read() {
   return SD.file.read();
 }
 
+// buffered read for more efficient, high speed reading
+int File::read(void *buf, uint16_t nbyte) {
+  return SD.file.read(buf, nbyte);
+}
+
 int File::available() {
   return size() - position();
 }
