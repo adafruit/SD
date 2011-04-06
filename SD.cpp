@@ -374,7 +374,9 @@ SdFile SDClass::getParentDir(char *filepath, int *index) {
 
     // extract just the name of the next subdirectory
     uint8_t idx = strchr(filepath, '/') - filepath;
-    char subdirname[12];
+    if (idx > 12)
+      idx = 12;    // dont let them specify long names
+    char subdirname[13];
     strncpy(subdirname, filepath, idx);
     subdirname[idx] = 0;
 
