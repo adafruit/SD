@@ -443,12 +443,25 @@ File SDClass::open(char *filepath, uint8_t mode) {
 
   // Open the file itself
   SdFile file;
-  
-  if (!parentdir.isOpen() || ! file.open(parentdir, filepath, mode)) {
-    // failed to open the final file itself or one of the subdirs
+
+  // failed to open a subdir!
+  if (!parentdir.isOpen())
     return File();
+
+  // there is a special case for the Root directory since its a static dir
+  if (parentdir.isRoot()) {
+    if ( ! file.open(SD.root, filepath, mode)) {
+      // failed to open the file :(
+      return File();
+    }
+    // dont close the root!
+  } else {
+    if ( ! file.open(parentdir, filepath, mode)) {
+      return File();
+    }
+    // close the parent
+    parentdir.close();
   }
-  parentdir.close();
 
   if (mode & (O_APPEND | O_WRITE)) 
     file.seekSet(file.fileSize());
@@ -577,7 +590,7 @@ File File::openNextFile(uint8_t mode) {
 
     // print file name with possible blank fill
     SdFile f;
-    char name[12];
+    char name[13];
     _file->dirName(p, name);
     //Serial.print("try to open file ");
     //Serial.println(name);
