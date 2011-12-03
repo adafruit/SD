@@ -23,8 +23,12 @@
  * \file
  * Useful utility functions.
  */
-#include <WProgram.h>
-#include <avr/pgmspace.h>
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+ #include <avr/pgmspace.h>
+#endif
 /** Store and print a string in flash memory.*/
 #define PgmPrint(x) SerialPrint_P(PSTR(x))
 /** Store and print a string in flash memory followed by a CR/LF.*/

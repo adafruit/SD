@@ -15,7 +15,11 @@
 #ifndef __SD_H__
 #define __SD_H__
 
-#include <WProgram.h>
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
 
 #include <utility/SdFat.h>
 #include <utility/SdFatUtil.h>
@@ -32,9 +36,15 @@ public:
   File(SdFile f, char *name);     // wraps an underlying SdFile
   File(void);      // 'empty' constructor
   ~File(void);     // destructor
+#if ARDUINO >= 100
+  virtual size_t write(uint8_t);
+  virtual size_t write(const char *str);
+  virtual size_t write(const uint8_t *buf, size_t size);
+#else
   virtual void write(uint8_t);
   virtual void write(const char *str);
   virtual void write(const uint8_t *buf, size_t size);
+#endif
   virtual int read();
   virtual int peek();
   virtual int available();

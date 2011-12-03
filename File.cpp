@@ -58,6 +58,31 @@ boolean File::isDirectory(void) {
 }
 
 
+#if ARDUINO >= 100
+
+size_t File::write(uint8_t val) {
+  if (_file)
+    return _file->write(val);
+  else
+    return 0;
+}
+
+size_t File::write(const char *str) {
+  if (_file) 
+    return _file->write(str);
+  else
+    return 0;
+}
+
+size_t File::write(const uint8_t *buf, size_t size) {
+  if (_file)
+    return _file->write(buf, size);
+  else
+    return 0;
+}
+
+#else
+
 void File::write(uint8_t val) {
   if (_file)
     _file->write(val);
@@ -72,6 +97,8 @@ void File::write(const uint8_t *buf, size_t size) {
   if (_file)
     _file->write(buf, size);
 }
+
+#endif // ARDUINO
 
 int File::peek() {
   if (! _file) 

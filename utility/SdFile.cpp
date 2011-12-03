@@ -19,7 +19,11 @@
  */
 #include <SdFat.h>
 #include <avr/pgmspace.h>
-#include <WProgram.h>
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
 //------------------------------------------------------------------------------
 // callback function for date/time
 void (*SdFile::dateTime_)(uint16_t* date, uint16_t* time) = NULL;
@@ -1121,7 +1125,11 @@ uint8_t SdFile::truncate(uint32_t length) {
  * for a read-only file, device is full, a corrupt file system or an I/O error.
  *
  */
+#if ARDUINO >= 100
+size_t SdFile::write(const void* buf, uint16_t nbyte) {
+#else
 int16_t SdFile::write(const void* buf, uint16_t nbyte) {
+#endif
   // convert void* to uint8_t*  -  must be before goto statements
   const uint8_t* src = reinterpret_cast<const uint8_t*>(buf);
 
@@ -1219,18 +1227,30 @@ int16_t SdFile::write(const void* buf, uint16_t nbyte) {
  *
  * Use SdFile::writeError to check for errors.
  */
+#if ARDUINO >= 100
+size_t SdFile::write(uint8_t b) {
+  return write(&b, 1);
+}
+#else
 void SdFile::write(uint8_t b) {
   write(&b, 1);
 }
+#endif
 //------------------------------------------------------------------------------
 /**
  * Write a string to a file. Used by the Arduino Print class.
  *
  * Use SdFile::writeError to check for errors.
  */
+#if ARDUINO >= 100
+size_t SdFile::write(const char* str) {
+  return write(str, strlen(str));
+}
+#else
 void SdFile::write(const char* str) {
   write(str, strlen(str));
 }
+#endif
 //------------------------------------------------------------------------------
 /**
  * Write a PROGMEM string to a file.
