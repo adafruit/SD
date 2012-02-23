@@ -594,7 +594,11 @@ void SdFile::printDirName(const dir_t& dir, uint8_t width) {
       Serial.print('.');
       w++;
     }
+#if ARDUINO >= 100
+    Serial.write(dir.name[i]);
+#else
     Serial.print(dir.name[i]);
+#endif
     w++;
   }
   if (DIR_IS_SUBDIR(&dir)) {
