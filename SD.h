@@ -94,6 +94,8 @@ public:
   
   boolean rmdir(char *filepath);
 
+  void enableCRC(boolean mode);
+
 private:
 
   // This is used to determine the mode used to open a file

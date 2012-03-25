@@ -205,6 +205,7 @@ class Sd2Card {
   uint8_t writeData(const uint8_t* src);
   uint8_t writeStart(uint32_t blockNumber, uint32_t eraseCount);
   uint8_t writeStop(void);
+  void    enableCRC(uint8_t mode);
  private:
   uint32_t block_;
   uint8_t chipSelectPin_;
@@ -214,6 +215,7 @@ class Sd2Card {
   uint8_t partialBlockRead_;
   uint8_t status_;
   uint8_t type_;
+  uint8_t writeCRC_;
   // private functions
   uint8_t cardAcmd(uint8_t cmd, uint32_t arg) {
     cardCommand(CMD55, 0);

@@ -215,7 +215,7 @@ uint8_t Sd2Card::eraseSingleBlockEnable(void) {
  * can be determined by calling errorCode() and errorData().
  */
 uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin) {
-  errorCode_ = inBlock_ = partialBlockRead_ = type_ = 0;
+  writeCRC_ = errorCode_ = inBlock_ = partialBlockRead_ = type_ = 0;
   chipSelectPin_ = chipSelectPin;
   // 16-bit init start time allows over a minute
   uint16_t t0 = (uint16_t)millis();
@@ -413,7 +413,7 @@ void Sd2Card::readEnd(void) {
       while (!(SPSR & (1 << SPIF)));
       SPDR = 0XFF;
     }
-    // wait for last crc byte
+    // Wait for last CRC byte
     while (!(SPSR & (1 << SPIF)));
 #else  // OPTIMIZE_HARDWARE_SPI
     while (offset_++ < 514) spiRec();
@@ -558,6 +558,25 @@ uint8_t Sd2Card::writeData(const uint8_t* src) {
 //------------------------------------------------------------------------------
 // send one block of data for write block or write multiple blocks
 uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
+
+  // CRC16 checksum is supposed to be ignored in SPI mode (unless
+  // explicitly enabled) and a dummy value is normally written.
+  // A few funny cards (e.g. Eye-Fi X2) expect a valid CRC anyway.
+  // Call setCRC(true) to enable CRC16 checksum on block writes.
+  // This has a noticeable impact on write speed. :(
+  int16_t crc;
+  if(writeCRC_) {
+    int16_t i, x;
+    // CRC16 code via Scott Dattalo www.dattalo.com
+    for(crc=i=0; i<512; i++) {
+      x   = ((crc >> 8) ^ src[i]) & 0xff;
+      x  ^= x >> 4;
+      crc = (crc << 8) ^ (x << 12) ^ (x << 5) ^ x;
+    }
+  } else {
+    crc = 0xffff; // Dummy CRC value
+  }
+
 #ifdef OPTIMIZE_HARDWARE_SPI
 
   // send data - optimized loop
@@ -580,8 +599,9 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
     spiSend(src[i]);
   }
 #endif  // OPTIMIZE_HARDWARE_SPI
-  spiSend(0xff);  // dummy crc
-  spiSend(0xff);  // dummy crc
+
+  spiSend(crc >> 8); // Might be dummy value, that's OK
+  spiSend(crc);
 
   status_ = spiRec();
   if ((status_ & DATA_RES_MASK) != DATA_RES_ACCEPTED) {
@@ -646,3 +666,8 @@ uint8_t Sd2Card::writeStop(void) {
   chipSelectHigh();
   return false;
 }
+
+void Sd2Card::enableCRC(uint8_t mode) {
+  writeCRC_ = mode;
+}
+

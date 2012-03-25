@@ -562,6 +562,10 @@ boolean SDClass::remove(char *filepath) {
   return walkPath(filepath, root, callback_remove);
 }
 
+void SDClass::enableCRC(boolean mode) {
+  card.enableCRC(mode);
+}
+
 
 // allows you to recurse into a directory
 File File::openNextFile(uint8_t mode) {
