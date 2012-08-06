@@ -22,6 +22,10 @@
 #define Sd2PinMap_h
 #include <avr/io.h>
 
+#if (ARDUINO >= 100)
+#include "Arduino.h"
+#endif
+
 //------------------------------------------------------------------------------
 /** struct for mapping digital pins */
 struct pin_map_t {
@@ -166,33 +170,35 @@ static const pin_map_t digitalPinMap[] = {
 };
 //------------------------------------------------------------------------------
 #elif defined(__AVR_ATmega32U4__)
-// Teensy 2.0
+// XXXXTeensy 2.0XXXX - this is not going to be the teensy pinout anymore!
+// because we need to give priority to the leonardo 
 
 // Two Wire (aka I2C) ports
-uint8_t const SDA_PIN = 6;
-uint8_t const SCL_PIN = 5;
+uint8_t const SDA_PIN = 2;
+uint8_t const SCL_PIN = 3;
 
 // SPI port
-uint8_t const SS_PIN = 0;
-uint8_t const MOSI_PIN = 2;
-uint8_t const MISO_PIN = 3;
-uint8_t const SCK_PIN = 1;
+uint8_t const SS_PIN = SS;
+uint8_t const MOSI_PIN = MOSI;
+uint8_t const MISO_PIN = MISO;
+uint8_t const SCK_PIN = SCK;
 
 static const pin_map_t digitalPinMap[] = {
-  {&DDRB, &PINB, &PORTB, 0},  // B0  0
-  {&DDRB, &PINB, &PORTB, 1},  // B1  1
-  {&DDRB, &PINB, &PORTB, 2},  // B2  2
-  {&DDRB, &PINB, &PORTB, 3},  // B3  3
-  {&DDRB, &PINB, &PORTB, 7},  // B7  4
-  {&DDRD, &PIND, &PORTD, 0},  // D0  5
-  {&DDRD, &PIND, &PORTD, 1},  // D1  6
-  {&DDRD, &PIND, &PORTD, 2},  // D2  7
-  {&DDRD, &PIND, &PORTD, 3},  // D3  8
-  {&DDRC, &PINC, &PORTC, 6},  // C6  9
-  {&DDRC, &PINC, &PORTC, 7},  // C7 10
-  {&DDRD, &PIND, &PORTD, 6},  // D6 11
-  {&DDRD, &PIND, &PORTD, 7},  // D7 12
-  {&DDRB, &PINB, &PORTB, 4},  // B4 13
+  {&DDRD, &PIND, &PORTD, 2},  // D2  0
+  {&DDRD, &PIND, &PORTD, 3},  // D3  1
+  {&DDRD, &PIND, &PORTD, 1},  // D1  2
+  {&DDRD, &PIND, &PORTD, 0},  // D0  3
+  {&DDRD, &PIND, &PORTD, 4},  // D4  4
+  {&DDRC, &PINC, &PORTC, 6},  // C6  5
+  {&DDRD, &PIND, &PORTD, 7},  // D7  6
+  {&DDRE, &PINE, &PORTE, 6},  // E6  7
+  {&DDRB, &PINB, &PORTB, 4},  // B4  8
+  {&DDRB, &PINB, &PORTB, 5},  // B5  9
+  {&DDRB, &PINB, &PORTB, 6},  // B6 10
+  {&DDRB, &PINB, &PORTB, 7},  // B7 11
+  {&DDRD, &PIND, &PORTD, 6},  // D6 12
+  {&DDRC, &PINC, &PORTC, 7},  // C7 13
+  /*
   {&DDRB, &PINB, &PORTB, 5},  // B5 14
   {&DDRB, &PINB, &PORTB, 6},  // B6 15
   {&DDRF, &PINF, &PORTF, 7},  // F7 16
@@ -204,6 +210,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRD, &PIND, &PORTD, 4},  // D4 22
   {&DDRD, &PIND, &PORTD, 5},  // D5 23
   {&DDRE, &PINE, &PORTE, 6}   // E6 24
+  */
 };
 //------------------------------------------------------------------------------
 #elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB1286__)

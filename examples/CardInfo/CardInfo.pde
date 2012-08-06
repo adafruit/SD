@@ -6,15 +6,17 @@
  Very useful for testing a card when you're not sure whether its working or not.
  	
  The circuit:
-  * SD card attached to SPI bus as follows:
- ** MOSI - pin 11 on Arduino Uno/Duemilanove/Diecimila
- ** MISO - pin 12 on Arduino Uno/Duemilanove/Diecimila
- ** CLK - pin 13 on Arduino Uno/Duemilanove/Diecimila
- ** CS - depends on your SD card shield or module
+ * SD card attached to SPI bus as follows:
+ ** UNO:  MOSI - pin 11, MISO - pin 12, CLK - pin 13, CS - pin 4 (CS pin can be changed)
+  and pin #10 (SS) must be an output
+ ** Mega:  MOSI - pin 51, MISO - pin 50, CLK - pin 52, CS - pin 4 (CS pin can be changed)
+  and pin #52 (SS) must be an output
+ ** Leonardo: Connect to hardware SPI via the ICSP header
+ 		Pin 4 used here for consistency with other Arduino examples
 
  
- created  28 Mar 2011
- by Limor Fried 
+ created  28 Mar 2011  by Limor Fried 
+ modified 9 Apr 2012   by Tom Igoe
  */
  // include the SD library:
 #include <SD.h>
@@ -32,27 +34,30 @@ const int chipSelect = 4;
 
 void setup()
 {
+ // Open serial communications and wait for port to open:
   Serial.begin(9600);
+   while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+  }
+
+
   Serial.print("\nInitializing SD card...");
   // On the Ethernet Shield, CS is pin 4. It's set as an output by default.
   // Note that even if it's not used as the CS pin, the hardware SS pin 
   // (10 on most Arduino boards, 53 on the Mega) must be left as an output 
   // or the SD library functions will not work. 
-  pinMode(10, OUTPUT);     // change this to 53 on a mega
+  pinMode(SS, OUTPUT);
 
 
   // we'll use the initialization code from the utility libraries
   // since we're just testing if the card is working!
-  if (!card.init(SPI_HALF_SPEED, chipSelect)) {
+  while (!card.init(SPI_HALF_SPEED, chipSelect)) {
     Serial.println("initialization failed. Things to check:");
     Serial.println("* is a card is inserted?");
     Serial.println("* Is your wiring correct?");
     Serial.println("* did you change the chipSelect pin to match your shield or module?");
-    return;
-  } else {
-   Serial.println("Wiring is correct and a card is present."); 
-  }
-
+  } 
+  
   // print the type of card
   Serial.print("\nCard type: ");
   switch(card.type()) {

@@ -31,6 +31,7 @@ uint8_t const SPI_FULL_SPEED = 0;
 uint8_t const SPI_HALF_SPEED = 1;
 /** Set SCK rate to F_CPU/8. Sd2Card::setSckRate(). */
 uint8_t const SPI_QUARTER_SPEED = 2;
+
 /**
  * Define MEGA_SOFT_SPI non-zero to use software SPI on Mega Arduinos.
  * Pins used are SS 10, MOSI 11, MISO 12, and SCK 13.
@@ -40,8 +41,23 @@ uint8_t const SPI_QUARTER_SPEED = 2;
  * but many SD cards will fail with GPS Shield V1.0.
  */
 #define MEGA_SOFT_SPI 0
+
+/**
+ * Define LEO_SOFT_SPI non-zero to use software SPI on Leonardo Arduinos.
+ * Pins used are SS 10, MOSI 11, MISO 12, and SCK 13.
+ *
+ * LEO_SOFT_SPI allows an unmodified Adafruit GPS Shield to be used
+ * on Leonardo Arduinos.  Software SPI works well with GPS Shield V1.1
+ * but many SD cards will fail with GPS Shield V1.0.
+ */
+#define LEO_SOFT_SPI 0
+
 //------------------------------------------------------------------------------
 #if MEGA_SOFT_SPI && (defined(__AVR_ATmega1280__)||defined(__AVR_ATmega2560__))
+#define SOFTWARE_SPI
+#endif  // MEGA_SOFT_SPI
+//------------------------------------------------------------------------------
+#if LEO_SOFT_SPI && (defined(__AVR_ATmega32U4__))
 #define SOFTWARE_SPI
 #endif  // MEGA_SOFT_SPI
 //------------------------------------------------------------------------------
@@ -69,7 +85,7 @@ uint8_t const  SPI_SCK_PIN = SCK_PIN;
 #define OPTIMIZE_HARDWARE_SPI
 
 #else  // SOFTWARE_SPI
-// define software SPI pins so Mega can use unmodified GPS Shield
+// define software SPI pins so Mega/Leonardo can use unmodified GPS Shield
 /** SPI chip select pin */
 uint8_t const SD_CHIP_SELECT_PIN = 10;
 /** SPI Master Out Slave In pin */
@@ -206,6 +222,7 @@ class Sd2Card {
   uint8_t writeStart(uint32_t blockNumber, uint32_t eraseCount);
   uint8_t writeStop(void);
   void    enableCRC(uint8_t mode);
+
  private:
   uint32_t block_;
   uint8_t chipSelectPin_;
@@ -216,6 +233,7 @@ class Sd2Card {
   uint8_t status_;
   uint8_t type_;
   uint8_t writeCRC_;
+
   // private functions
   uint8_t cardAcmd(uint8_t cmd, uint32_t arg) {
     cardCommand(CMD55, 0);

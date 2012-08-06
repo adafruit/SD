@@ -5,16 +5,16 @@
  to an SD card using the SD library.
  	
  The circuit:
- * analog sensors on analog ins 0, 1, and 2
  * SD card attached to SPI bus as follows:
- ** MOSI - pin 11
- ** MISO - pin 12
- ** CLK - pin 13
- ** CS - pin 4
+ ** UNO:  MOSI - pin 11, MISO - pin 12, CLK - pin 13, CS - pin 4 (CS pin can be changed)
+  and pin #10 (SS) must be an output
+ ** Mega:  MOSI - pin 51, MISO - pin 50, CLK - pin 52, CS - pin 4 (CS pin can be changed)
+  and pin #52 (SS) must be an output
+ ** Leonardo: Connect to hardware SPI via the ICSP header
+ 		Pin 4 used here for consistency with other Arduino examples
  
  created  24 Nov 2010
- updated 2 Dec 2010
- by Tom Igoe
+ modified 9 Apr 2012 by Tom Igoe
  
  This example code is in the public domain.
  	 
@@ -28,21 +28,37 @@
 // functions will not work.
 const int chipSelect = 4;
 
+File dataFile;
+
 void setup()
 {
+ // Open serial communications and wait for port to open:
   Serial.begin(9600);
+   while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+  }
+
+
   Serial.print("Initializing SD card...");
   // make sure that the default chip select pin is set to
   // output, even if you don't use it:
-  pinMode(10, OUTPUT);
+  pinMode(SS, OUTPUT);
   
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
     // don't do anything more:
-    return;
+    while (1) ;
   }
   Serial.println("card initialized.");
+  
+  // Open up the file we're going to log to!
+  dataFile = SD.open("datalog.txt", FILE_WRITE);
+  if (! dataFile) {
+    Serial.println("error opening datalog.txt");
+    // Wait forever since we cant write data
+    while (1) ;
+  }
 }
 
 void loop()
@@ -59,21 +75,21 @@ void loop()
     }
   }
 
-  // open the file. note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-  File dataFile = SD.open("datalog.txt", FILE_WRITE);
+  dataFile.println(dataString);
 
-  // if the file is available, write to it:
-  if (dataFile) {
-    dataFile.println(dataString);
-    dataFile.close();
-    // print to the serial port too:
-    Serial.println(dataString);
-  }  
-  // if the file isn't open, pop up an error:
-  else {
-    Serial.println("error opening datalog.txt");
-  } 
+  // print to the serial port too:
+  Serial.println(dataString);
+  
+  // The following line will 'save' the file to the SD card after every
+  // line of data - this will use more power and slow down how much data
+  // you can read but it's safer! 
+  // If you want to speed up the system, remove the call to flush() and it
+  // will save the file only every 512 bytes - every time a sector on the 
+  // SD card is filled with data.
+  dataFile.flush();
+  
+  // Take 1 measurement every 500 milliseconds
+  delay(500);
 }
 
 
