@@ -59,7 +59,7 @@ uint8_t const SPI_QUARTER_SPEED = 2;
 //------------------------------------------------------------------------------
 #if LEO_SOFT_SPI && (defined(__AVR_ATmega32U4__))
 #define SOFTWARE_SPI
-#endif  // MEGA_SOFT_SPI
+#endif  // LEO_SOFT_SPI
 //------------------------------------------------------------------------------
 // SPI pin definitions
 //
