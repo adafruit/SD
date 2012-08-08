@@ -75,7 +75,7 @@ private:
 public:
   // This needs to be called to set up the connection to the SD card
   // before other methods are used.
-  boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN);
+  boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN, int8_t mosi = -1, int8_t miso = -1, int8_t sck = -1);
   
   // Open the specified file/directory with the supplied mode (e.g. read or
   // write, etc). Returns a File object for interacting with the file.

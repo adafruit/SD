@@ -82,7 +82,7 @@ uint8_t const  SPI_MISO_PIN = MISO_PIN;
 /** SPI Clock pin */
 uint8_t const  SPI_SCK_PIN = SCK_PIN;
 /** optimize loops for hardware SPI */
-#define OPTIMIZE_HARDWARE_SPI
+//#define OPTIMIZE_HARDWARE_SPI  // MEME FIX ME LATER
 
 #else  // SOFTWARE_SPI
 // define software SPI pins so Mega/Leonardo can use unmodified GPS Shield
@@ -193,7 +193,7 @@ class Sd2Card {
   uint8_t init(uint8_t sckRateID) {
     return init(sckRateID, SD_CHIP_SELECT_PIN);
   }
-  uint8_t init(uint8_t sckRateID, uint8_t chipSelectPin);
+  uint8_t init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin = -1, int8_t misoPin = -1, int8_t clockPin = -1);
   void partialBlockRead(uint8_t value);
   /** Returns the current value, true or false, for partial block read. */
   uint8_t partialBlockRead(void) const {return partialBlockRead_;}
