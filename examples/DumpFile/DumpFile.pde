@@ -53,7 +53,7 @@ void setup()
   // so you have to close this one before opening another.
   File dataFile = SD.open("datalog.txt");
 
-  // if the file is available, write to it:
+  // if the file is available, read from it:
   if (dataFile) {
     while (dataFile.available()) {
       Serial.write(dataFile.read());
