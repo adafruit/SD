@@ -19,6 +19,7 @@
  	 
  */
 
+#include <SPI.h>
 #include <SD.h>
 
 // change this to match your SD shield or module;

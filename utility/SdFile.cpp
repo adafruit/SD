@@ -17,13 +17,11 @@
  * along with the Arduino SdFat Library.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-#include <SdFat.h>
+#include "SdFat.h"
+#ifdef __AVR__
 #include <avr/pgmspace.h>
-#if ARDUINO >= 100
- #include "Arduino.h"
-#else
- #include "WProgram.h"
 #endif
+#include <Arduino.h>
 //------------------------------------------------------------------------------
 // callback function for date/time
 void (*SdFile::dateTime_)(uint16_t* date, uint16_t* time) = NULL;
@@ -260,9 +258,15 @@ uint8_t SdFile::make83Name(const char* str, uint8_t* name) {
       i = 8;   // place for extension
     } else {
       // illegal FAT characters
-      PGM_P p = PSTR("|<>^+=?/[];,*\"\\");
       uint8_t b;
+#if defined(__AVR__)
+      PGM_P p = PSTR("|<>^+=?/[];,*\"\\");
       while ((b = pgm_read_byte(p++))) if (b == c) return false;
+#elif defined(__arm__)
+      const uint8_t valid[] = "|<>^+=?/[];,*\"\\";
+      const uint8_t *p = valid;
+      while ((b = *p++)) if (b == c) return false;
+#endif
       // check size and only allow ASCII printable characters
       if (i > n || c < 0X21 || c > 0X7E)return false;
       // only upper case allowed in 8.3 names - convert lower to upper
@@ -594,11 +598,7 @@ void SdFile::printDirName(const dir_t& dir, uint8_t width) {
       Serial.print('.');
       w++;
     }
-#if ARDUINO >= 100
     Serial.write(dir.name[i]);
-#else
-    Serial.print(dir.name[i]);
-#endif
     w++;
   }
   if (DIR_IS_SUBDIR(&dir)) {
@@ -1129,11 +1129,7 @@ uint8_t SdFile::truncate(uint32_t length) {
  * for a read-only file, device is full, a corrupt file system or an I/O error.
  *
  */
-#if ARDUINO >= 100
 size_t SdFile::write(const void* buf, uint16_t nbyte) {
-#else
-int16_t SdFile::write(const void* buf, uint16_t nbyte) {
-#endif
   // convert void* to uint8_t*  -  must be before goto statements
   const uint8_t* src = reinterpret_cast<const uint8_t*>(buf);
 
@@ -1222,8 +1218,9 @@ int16_t SdFile::write(const void* buf, uint16_t nbyte) {
 
  writeErrorReturn:
   // return for write error
-  writeError = true;
-  return -1;
+  //writeError = true;
+  setWriteError();
+  return 0;
 }
 //------------------------------------------------------------------------------
 /**
@@ -1231,30 +1228,19 @@ int16_t SdFile::write(const void* buf, uint16_t nbyte) {
  *
  * Use SdFile::writeError to check for errors.
  */
-#if ARDUINO >= 100
 size_t SdFile::write(uint8_t b) {
   return write(&b, 1);
 }
-#else
-void SdFile::write(uint8_t b) {
-  write(&b, 1);
-}
-#endif
 //------------------------------------------------------------------------------
 /**
  * Write a string to a file. Used by the Arduino Print class.
  *
  * Use SdFile::writeError to check for errors.
  */
-#if ARDUINO >= 100
 size_t SdFile::write(const char* str) {
   return write(str, strlen(str));
 }
-#else
-void SdFile::write(const char* str) {
-  write(str, strlen(str));
-}
-#endif
+#ifdef __AVR__
 //------------------------------------------------------------------------------
 /**
  * Write a PROGMEM string to a file.
@@ -1274,3 +1260,4 @@ void SdFile::writeln_P(PGM_P str) {
   write_P(str);
   println();
 }
+#endif

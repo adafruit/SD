@@ -18,7 +18,7 @@
    uint8_t nfilecount=0;
 */
 
-File::File(SdFile f, char *n) {
+File::File(SdFile f, const char *n) {
   // oh man you are kidding me, new() doesnt exist? Ok we do it by hand!
   _file = (SdFile *)malloc(sizeof(SdFile)); 
   if (_file) {
@@ -58,47 +58,24 @@ boolean File::isDirectory(void) {
 }
 
 
-#if ARDUINO >= 100
-
 size_t File::write(uint8_t val) {
-  if (_file)
-    return _file->write(val);
-  else
-    return 0;
-}
-
-size_t File::write(const char *str) {
-  if (_file) 
-    return _file->write(str);
-  else
-    return 0;
+  return write(&val, 1);
 }
 
 size_t File::write(const uint8_t *buf, size_t size) {
-  if (_file)
-    return _file->write(buf, size);
-  else
+  size_t t;
+  if (!_file) {
+    setWriteError();
     return 0;
+  }
+  _file->clearWriteError();
+  t = _file->write(buf, size);
+  if (_file->getWriteError()) {
+    setWriteError();
+    return 0;
+  }
+  return t;
 }
-
-#else
-
-void File::write(uint8_t val) {
-  if (_file)
-    _file->write(val);
-}
-
-void File::write(const char *str) {
-  if (_file) 
-    _file->write(str);
-}
-
-void File::write(const uint8_t *buf, size_t size) {
-  if (_file)
-    _file->write(buf, size);
-}
-
-#endif // ARDUINO
 
 int File::peek() {
   if (! _file) 

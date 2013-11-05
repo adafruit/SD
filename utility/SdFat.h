@@ -23,7 +23,9 @@
  * \file
  * SdFile and SdVolume classes
  */
+#ifdef __AVR__
 #include <avr/pgmspace.h>
+#endif
 #include "Sd2Card.h"
 #include "FatStructs.h"
 #include "Print.h"
@@ -141,7 +143,7 @@ class SdFile : public Print {
    * Set writeError to false before calling print() and/or write() and check
    * for true after calls to print() and/or write().
    */
-  bool writeError;
+  //bool writeError;
   /**
    * Cancel unbuffered reads for this file.
    * See setUnbufferedRead()
@@ -283,17 +285,13 @@ class SdFile : public Print {
   }
   /** \return SdVolume that contains this file. */
   SdVolume* volume(void) const {return vol_;}
-#if ARDUINO >= 100
   size_t write(uint8_t b);
   size_t write(const void* buf, uint16_t nbyte);
   size_t write(const char* str);
-#else
-  void write(uint8_t b);
-  int16_t write(const void* buf, uint16_t nbyte);
-  void write(const char* str);
-#endif
+#ifdef __AVR__
   void write_P(PGM_P str);
   void writeln_P(PGM_P str);
+#endif
 //------------------------------------------------------------------------------
 #if ALLOW_DEPRECATED_FUNCTIONS
 // Deprecated functions  - suppress cpplint warnings with NOLINT comment
