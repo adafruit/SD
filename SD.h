@@ -21,6 +21,7 @@
 #include "WProgram.h"
 #endif
 
+#include <SPI.h>
 #include <utility/SdFat.h>
 #include <utility/SdFatUtil.h>
 
