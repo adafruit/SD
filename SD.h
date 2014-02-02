@@ -15,13 +15,8 @@
 #ifndef __SD_H__
 #define __SD_H__
 
-#if ARDUINO >= 100
-#include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
+#include <Arduino.h>
 
-#include <SPI.h>
 #include <utility/SdFat.h>
 #include <utility/SdFatUtil.h>
 
@@ -40,13 +35,8 @@ public:
   File(SdFile f, const char *name);     // wraps an underlying SdFile
   File(void);      // 'empty' constructor
   ~File(void);     // destructor
-#if ARDUINO >= 100
   virtual size_t write(uint8_t);
   virtual size_t write(const uint8_t *buf, size_t size);
-#else
-  virtual void write(uint8_t);
-  virtual void write(const uint8_t *buf, size_t size);
-#endif
   virtual int read();
   virtual int peek();
   virtual int available();
@@ -79,7 +69,7 @@ private:
 public:
   // This needs to be called to set up the connection to the SD card
   // before other methods are used.
-  boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN, int8_t mosi = -1, int8_t miso = -1, int8_t sck = -1);
+  boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN);
   
   // Open the specified file/directory with the supplied mode (e.g. read or
   // write, etc). Returns a File object for interacting with the file.
@@ -97,8 +87,6 @@ public:
   boolean remove(char *filepath);
   
   boolean rmdir(char *filepath);
-  
-  void enableCRC(boolean mode);
 
 private:
 

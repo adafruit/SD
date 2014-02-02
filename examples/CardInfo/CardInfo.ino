@@ -6,20 +6,20 @@
  Very useful for testing a card when you're not sure whether its working or not.
  	
  The circuit:
- * SD card attached to SPI bus as follows:
- ** UNO:  MOSI - pin 11, MISO - pin 12, CLK - pin 13, CS - pin 4 (CS pin can be changed)
-  and pin #10 (SS) must be an output
- ** Mega:  MOSI - pin 51, MISO - pin 50, CLK - pin 52, CS - pin 4 (CS pin can be changed)
-  and pin #52 (SS) must be an output
- ** Leonardo: Connect to hardware SPI via the ICSP header
+  * SD card attached to SPI bus as follows:
+ ** MOSI - pin 11 on Arduino Uno/Duemilanove/Diecimila
+ ** MISO - pin 12 on Arduino Uno/Duemilanove/Diecimila
+ ** CLK - pin 13 on Arduino Uno/Duemilanove/Diecimila
+ ** CS - depends on your SD card shield or module. 
  		Pin 4 used here for consistency with other Arduino examples
 
  
- created  28 Mar 2011  by Limor Fried 
- modified 9 Apr 2012   by Tom Igoe
+ created  28 Mar 2011
+ by Limor Fried 
+ modified 9 Apr 2012
+ by Tom Igoe
  */
  // include the SD library:
-#include <SPI.h>
 #include <SD.h>
 
 // set up variables using the SD utility library functions:
@@ -31,6 +31,8 @@ SdFile root;
 // Arduino Ethernet shield: pin 4
 // Adafruit SD shields and modules: pin 10
 // Sparkfun SD shield: pin 8
+// Teensy 2.0: pin 0
+// Teensy++ 2.0: pin 20
 const int chipSelect = 4;    
 
 void setup()
@@ -52,13 +54,16 @@ void setup()
 
   // we'll use the initialization code from the utility libraries
   // since we're just testing if the card is working!
-  while (!card.init(SPI_HALF_SPEED, chipSelect)) {
+  if (!card.init(SPI_HALF_SPEED, chipSelect)) {
     Serial.println("initialization failed. Things to check:");
     Serial.println("* is a card is inserted?");
     Serial.println("* Is your wiring correct?");
     Serial.println("* did you change the chipSelect pin to match your shield or module?");
-  } 
-  
+    return;
+  } else {
+   Serial.println("Wiring is correct and a card is present."); 
+  }
+
   // print the type of card
   Serial.print("\nCard type: ");
   switch(card.type()) {
