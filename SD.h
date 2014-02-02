@@ -28,9 +28,12 @@
 #define FILE_READ O_READ
 #define FILE_WRITE (O_READ | O_WRITE | O_CREAT)
 
+#define MAX_COMPONENT_LEN 12 // Cuz that's what old-school DOS likes. We should make this work with FAT32 long file names..
+#define PATH_COMPONENT_BUFFER_LEN MAX_COMPONENT_LEN+1
+
 class File : public Stream {
  private:
-  char _name[13]; // our name
+  char _name[PATH_COMPONENT_BUFFER_LEN]; // our name
   SdFile *_file;  // underlying file pointer
 
 public:

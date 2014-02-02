@@ -53,8 +53,6 @@
 #include "SD.h"
 
 // Used by `getNextPathComponent`
-#define MAX_COMPONENT_LEN 12 // What is max length?
-#define PATH_COMPONENT_BUFFER_LEN MAX_COMPONENT_LEN+1
 
 bool getNextPathComponent(char *path, unsigned int *p_offset,
 			  char *buffer) {
@@ -374,9 +372,9 @@ SdFile SDClass::getParentDir(const char *filepath, int *index) {
 
     // extract just the name of the next subdirectory
     uint8_t idx = strchr(filepath, '/') - filepath;
-    if (idx > 12)
-      idx = 12;    // dont let them specify long names
-    char subdirname[13];
+    if (idx > MAX_COMPONENT_LEN)
+      idx = MAX_COMPONENT_LEN;    // dont let them specify long names
+    char subdirname[PATH_COMPONENT_BUFFER_LEN];
     strncpy(subdirname, filepath, idx);
     subdirname[idx] = 0;
 
@@ -594,7 +592,7 @@ File File::openNextFile(uint8_t mode) {
 
     // print file name with possible blank fill
     SdFile f;
-    char name[13];
+    char name[PATH_COMPONENT_BUFFER_LEN];
     _file->dirName(p, name);
     //Serial.print("try to open file ");
     //Serial.println(name);
