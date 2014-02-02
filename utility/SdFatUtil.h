@@ -24,14 +24,12 @@
  * Useful utility functions.
  */
 #include <Arduino.h>
-#ifdef __AVR__
 #include <avr/pgmspace.h>
 /** Store and print a string in flash memory.*/
 #define PgmPrint(x) SerialPrint_P(PSTR(x))
 /** Store and print a string in flash memory followed by a CR/LF.*/
 #define PgmPrintln(x) SerialPrintln_P(PSTR(x))
 /** Defined so doxygen works for function definitions. */
-#endif
 #define NOINLINE __attribute__((noinline,unused))
 #define UNUSEDOK __attribute__((unused))
 //------------------------------------------------------------------------------
@@ -51,7 +49,6 @@ static UNUSEDOK int FreeRam(void) {
   }
   return free_memory;
 }
-#ifdef __AVR__
 //------------------------------------------------------------------------------
 /**
  * %Print a string in flash memory to the serial port.
@@ -71,5 +68,4 @@ static NOINLINE void SerialPrintln_P(PGM_P str) {
   SerialPrint_P(str);
   Serial.println();
 }
-#endif  // __AVR__
 #endif  // #define SdFatUtil_h

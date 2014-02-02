@@ -32,11 +32,6 @@ uint8_t const SPI_HALF_SPEED = 1;
 /** Set SCK rate to F_CPU/8. Sd2Card::setSckRate(). */
 uint8_t const SPI_QUARTER_SPEED = 2;
 /**
- * USE_SPI_LIB: if set, use the SPI library bundled with Arduino IDE, otherwise
- * run with a standalone driver for AVR.
- */
-#define USE_SPI_LIB
-/**
  * Define MEGA_SOFT_SPI non-zero to use software SPI on Mega Arduinos.
  * Pins used are SS 10, MOSI 11, MISO 12, and SCK 13.
  *
@@ -71,9 +66,7 @@ uint8_t const  SPI_MISO_PIN = MISO_PIN;
 /** SPI Clock pin */
 uint8_t const  SPI_SCK_PIN = SCK_PIN;
 /** optimize loops for hardware SPI */
-#ifndef USE_SPI_LIB
 #define OPTIMIZE_HARDWARE_SPI
-#endif
 
 #else  // SOFTWARE_SPI
 // define software SPI pins so Mega can use unmodified GPS Shield
@@ -184,7 +177,7 @@ class Sd2Card {
   uint8_t init(uint8_t sckRateID) {
     return init(sckRateID, SD_CHIP_SELECT_PIN);
   }
-  uint8_t init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin = -1, int8_t misoPin = -1, int8_t clockPin = -1);
+  uint8_t init(uint8_t sckRateID, uint8_t chipSelectPin);
   void partialBlockRead(uint8_t value);
   /** Returns the current value, true or false, for partial block read. */
   uint8_t partialBlockRead(void) const {return partialBlockRead_;}
@@ -212,9 +205,7 @@ class Sd2Card {
   uint8_t writeData(const uint8_t* src);
   uint8_t writeStart(uint32_t blockNumber, uint32_t eraseCount);
   uint8_t writeStop(void);
-  void    enableCRC(uint8_t mode);
-
-private:
+ private:
   uint32_t block_;
   uint8_t chipSelectPin_;
   uint8_t errorCode_;
@@ -223,9 +214,6 @@ private:
   uint8_t partialBlockRead_;
   uint8_t status_;
   uint8_t type_;
-  uint8_t writeCRC_;
-
-  
   // private functions
   uint8_t cardAcmd(uint8_t cmd, uint32_t arg) {
     cardCommand(CMD55, 0);
