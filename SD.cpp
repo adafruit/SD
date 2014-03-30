@@ -617,13 +617,18 @@ File File::openNextFile(uint8_t mode) {
   open root and then you can count root.count() or use modifier 1 for FILES or 2 for FOLDERS.
   Function does not count removed or dots in the folder.
   */
-uint32_t File::count(uint8_t mode) {
+uint16_t File::count(uint8_t mode = 0) {
   dir_t p;
-  uint32_t files = 0;
-  uint32_t folders = 0;
+  uint16_t entries = 0;
+  uint16_t folders = 0;
   //Serial.print("\t\treading dir...");
   while (_file->readDir(&p) > 0) {
-
+    
+	if (p.name[0] == DIR_NAME_FREE) {
+	  //Serial.println("Empty dir name");
+	  break;
+	}
+	
     // skip deleted entry and entries for . and  ..
     if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') {
       //Serial.println("dots");
@@ -637,13 +642,13 @@ uint32_t File::count(uint8_t mode) {
     }
 	
 	if (DIR_IS_SUBDIR(&p)) folders++;
-	if (DIR_IS_FILE(&p)) files++;
+	entries++;
 
   }
 	
-  if (mode == 1) return files;
+  if (mode == 1) return entries - folders;
   else if (mode == 2) return folders;
-  else return files+folders;
+  else return entries;
 	
 }
 
