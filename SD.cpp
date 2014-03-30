@@ -614,15 +614,14 @@ File File::openNextFile(uint8_t mode) {
 
  /*
   Allows users to count files, folders or everything in folder that is opened ie. File root = SD.open("/"); shall
-  open root and then you can count root.count() or use modifier "FILES" or "FOLDERS".
+  open root and then you can count root.count() or use modifier 1 for FILES or 2 for FOLDERS.
   Function does not count removed or dots in the folder.
   */
-uint32_t File::count(char *mode = "") {
+uint32_t File::count(uint8_t mode) {
   dir_t p;
-  uint32_t entries = 0;
+  uint32_t files = 0;
   uint32_t folders = 0;
-  
-    //Serial.print("\t\treading dir...");
+  //Serial.print("\t\treading dir...");
   while (_file->readDir(&p) > 0) {
 
     // skip deleted entry and entries for . and  ..
@@ -638,14 +637,13 @@ uint32_t File::count(char *mode = "") {
     }
 	
 	if (DIR_IS_SUBDIR(&p)) folders++;
-	 
-	entries++;
+	if (DIR_IS_FILE(&p)) files++;
 
   }
 	
-  if (mode == "FOLDERS") return folders;
-  else if (mode == "FILES") return entries - folders;
-  else return entries;
+  if (mode == 1) return files;
+  else if (mode == 2) return folders;
+  else return files+folders;
 	
 }
 
