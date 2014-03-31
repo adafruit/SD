@@ -634,22 +634,26 @@ uint16_t File::count(uint8_t mode = 0) {
       //Serial.println("dots");
       continue;
     }
-
-    // only list subdirectories and files
-    if (!DIR_IS_FILE_OR_SUBDIR(&p)) {
-      //Serial.println("notafile");
-      continue;
-    }
 	
-	if (DIR_IS_SUBDIR(&p)) folders++;
-	entries++;
+    // only list subdirectories and files
+    if (DIR_IS_FILE_OR_SUBDIR(&p)) {
+      if (DIR_IS_SUBDIR(&p)) folders++;
+	  entries++;
+    }
+
 
   }
-	
-  if (mode == 1) return entries - folders;
-  else if (mode == 2) return folders;
-  else return entries;
-	
+  switch (mode) {
+    case 1: 
+	  return entries - folders;
+	  break;
+    case 2: 
+	  return folders;
+      break;
+    default: 
+	  return entries;
+	  break;
+  }
 }
 
 void File::rewindDirectory(void) {  
