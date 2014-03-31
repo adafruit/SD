@@ -613,19 +613,20 @@ File File::openNextFile(uint8_t mode) {
 }
 
  /*
-  Allows users to count files, folders or everything in folder that is opened ie. File root = SD.open("/"); shall
-  open root and then you can count root.count() or use modifier 1 for FILES or 2 for FOLDERS.
+  Allows users to count files, folders, hidden files or everything in folder that is opened ie. File root = SD.open("/"); shall
+  open root and then you can count root.count(0) or use modifier 1 for FILES or 2 for FOLDERS or 3 for HIDDEN files.
   Function does not count removed or dots in the folder.
   */
 uint16_t File::count(uint8_t mode = 0) {
   dir_t p;
   uint16_t entries = 0;
   uint16_t folders = 0;
+  unit16_t hidden = 0;
   //Serial.print("\t\treading dir...");
   while (_file->readDir(&p) > 0) {
-    
+  
 	if (p.name[0] == DIR_NAME_FREE) {
-	  //Serial.println("Empty dir name");
+	  //Serial.println("Gone past last one already");
 	  break;
 	}
 	
@@ -635,21 +636,30 @@ uint16_t File::count(uint8_t mode = 0) {
       continue;
     }
 	
-    // only list subdirectories and files
+    // Calculating entries, hidden files and sub folders
     if (DIR_IS_FILE_OR_SUBDIR(&p)) {
-      if (DIR_IS_SUBDIR(&p)) folders++;
-	  entries++;
+		// If the file is hidden...
+		if (p.attributes & DIR_ATT_HIDDEN) hidden++;
+		// If not...
+		else if (DIR_IS_SUBDIR(&p)) folders++;
+		// Adding total file count
+		entries++;
     }
-
-
   }
+  //Need to rewind directory for another calculation or processing.
+  _file->rewind();
+  
   switch (mode) {
     case 1: 
-	  return entries - folders;
-	  break;
+		//Return visible files only
+		return entries - folders - hidden;
+		break;
     case 2: 
-	  return folders;
-      break;
+		return folders;
+		break;
+	case 3:
+		return hidden;
+		break:
     default: 
 	  return entries;
 	  break;
