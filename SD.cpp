@@ -52,6 +52,17 @@
 
 #include "SD.h"
 
+#define DEBUG 1
+
+#if DEBUG
+#define DEBUG_PRINTLN(a) Serial.println(a)
+#define DEBUG_PRINTF(a, ...) Serial.printf(a, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINTLN(a)
+#define DEBUG_PRINTF(a, ...)
+#endif
+
+
 // Used by `getNextPathComponent`
 
 bool getNextPathComponent(char *path, unsigned int *p_offset,
@@ -434,8 +445,9 @@ File SDClass::open(const char *filepath, uint8_t mode) {
     
     filepath += pathidx;
     
-    if (! filepath[0]) {
+    if (!filepath[0]) {
         // it was the directory itself!
+        DEBUG_PRINTLN("SD: Returning root??");
         return File(parentdir, "/");
     }
     
@@ -443,26 +455,31 @@ File SDClass::open(const char *filepath, uint8_t mode) {
     SdFile file;
     
     // failed to open a subdir!
-    if (!parentdir.isOpen())
+    if (!parentdir.isOpen()) {
+        DEBUG_PRINTLN("SD: error; parent not open???");
         return File();
+    }
     
     // there is a special case for the Root directory since its a static dir
     if (parentdir.isRoot()) {
-        if ( ! file.open(SD.root, filepath, mode)) {
+        if (!file.open(SD.root, filepath, mode)) {
             // failed to open the file :(
+            DEBUG_PRINTLN("SD: parent is root...failed to open");
             return File();
         }
         // dont close the root!
     } else {
         if ( ! file.open(parentdir, filepath, mode)) {
+            DEBUG_PRINTLN("SD: parent is NOT root...failed to open");
             return File();
         }
         // close the parent
         parentdir.close();
     }
     
-    if (mode & (O_APPEND | O_WRITE))
+    if (mode & (O_APPEND | O_WRITE)) {
         file.seekSet(file.fileSize());
+    }
     return File(file, filepath);
 }
 

@@ -20,9 +20,25 @@
 #include <SdFat.h>
 #include <avr/pgmspace.h>
 #include <Arduino.h>
+
+
+#define DEBUG 1
+
+#if DEBUG
+#define DEBUG_PRINTLN(a) Serial.println(a)
+#define DEBUG_PRINTF(a, ...) Serial.printf(a, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINTLN(a)
+#define DEBUG_PRINTF(a, ...)
+#endif
+
+
 //------------------------------------------------------------------------------
 // callback function for date/time
 void (*SdFile::dateTime_)(uint16_t* date, uint16_t* time) = NULL;
+
+
+
 
 #if ALLOW_DEPRECATED_FUNCTIONS
 // suppress cpplint warnings with NOLINT comment
@@ -382,81 +398,110 @@ uint8_t SdFile::makeDir(SdFile* dir, const char* dirName) {
  * or can't be opened in the access mode specified by oflag.
  */
 uint8_t SdFile::open(SdFile* dirFile, const char* fileName, uint8_t oflag) {
-  uint8_t dname[11];
-  dir_t* p;
-
-  // error if already open
-  if (isOpen())return false;
-
-  if (!make83Name(fileName, dname)) return false;
-  vol_ = dirFile->vol_;
-  dirFile->rewind();
-
-  // bool for empty entry found
-  uint8_t emptyFound = false;
-
-  // search for file
-  while (dirFile->curPosition_ < dirFile->fileSize_) {
-    uint8_t index = 0XF & (dirFile->curPosition_ >> 5);
-    p = dirFile->readDirCache();
-    if (p == NULL) return false;
-
-    if (p->name[0] == DIR_NAME_FREE || p->name[0] == DIR_NAME_DELETED) {
-      // remember first empty slot
-      if (!emptyFound) {
-        emptyFound = true;
-        dirIndex_ = index;
-        dirBlock_ = SdVolume::cacheBlockNumber_;
-      }
-      // done if no entries follow
-      if (p->name[0] == DIR_NAME_FREE) break;
-    } else if (!memcmp(dname, p->name, 11)) {
-      // don't open existing file if O_CREAT and O_EXCL
-      if ((oflag & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL)) return false;
-
-      // open found file
-      return openCachedEntry(0XF & index, oflag);
+    uint8_t dname[11];
+    dir_t* p;
+    
+    // error if already open
+    if (isOpen()) {
+        DEBUG_PRINTLN("failing to open because it is open (stupid)");
+        return false;
     }
-  }
-  // only create file if O_CREAT and O_WRITE
-  if ((oflag & (O_CREAT | O_WRITE)) != (O_CREAT | O_WRITE)) return false;
+    
+    if (!make83Name(fileName, dname)) {
+        DEBUG_PRINTLN("failing to open because make83Name (stupid)");
+        return false;
+    }
+    
+    vol_ = dirFile->vol_;
+    dirFile->rewind();
+    
+    // bool for empty entry found
+    uint8_t emptyFound = false;
+    
+    // search for file
+    while (dirFile->curPosition_ < dirFile->fileSize_) {
+        uint8_t index = 0XF & (dirFile->curPosition_ >> 5);
+        p = dirFile->readDirCache();
+        if (p == NULL) {
+            DEBUG_PRINTLN("failing to open because p NULL?");
+            return false;
+        }
+        if (p->name[0] == DIR_NAME_FREE || p->name[0] == DIR_NAME_DELETED) {
+            // remember first empty slot
+            if (!emptyFound) {
+                emptyFound = true;
+                dirIndex_ = index;
+                dirBlock_ = SdVolume::cacheBlockNumber_;
+            }
+            // done if no entries follow
+            if (p->name[0] == DIR_NAME_FREE) break;
+        } else if (!memcmp(dname, p->name, 11)) {
+            // don't open existing file if O_CREAT and O_EXCL
+            if ((oflag & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL))  {
+                DEBUG_PRINTLN("failing to open because create..");
+                return false;
+            }
+            
+            // open found file
+            bool result = openCachedEntry(0XF & index, oflag);
+            if (!result) {
+                DEBUG_PRINTLN("failing to open because openCachedEntry failed..");
+            }
+            return result;
+        }
+    }
+    // only create file if O_CREAT and O_WRITE
+    if ((oflag & (O_CREAT | O_WRITE)) != (O_CREAT | O_WRITE)) return false;
+    
+    // cache found slot or add cluster if end of file
+    if (emptyFound) {
+        p = cacheDirEntry(SdVolume::CACHE_FOR_WRITE);
+        if (!p) {
+            DEBUG_PRINTLN("failing to open because !p");
+            return false;
+        }
+            
+    } else {
+        if (dirFile->type_ == FAT_FILE_TYPE_ROOT16) return false;
+        
+        // add and zero cluster for dirFile - first cluster is in cache for write
+        if (!dirFile->addDirCluster()) {
+            DEBUG_PRINTLN("failing to open because  failed addircluser");
+            return false;
 
-  // cache found slot or add cluster if end of file
-  if (emptyFound) {
-    p = cacheDirEntry(SdVolume::CACHE_FOR_WRITE);
-    if (!p) return false;
-  } else {
-    if (dirFile->type_ == FAT_FILE_TYPE_ROOT16) return false;
-
-    // add and zero cluster for dirFile - first cluster is in cache for write
-    if (!dirFile->addDirCluster()) return false;
-
-    // use first entry in cluster
-    dirIndex_ = 0;
-    p = SdVolume::cacheBuffer_.dir;
-  }
-  // initialize as empty file
-  memset(p, 0, sizeof(dir_t));
-  memcpy(p->name, dname, 11);
-
-  // set timestamps
-  if (dateTime_) {
-    // call user function
-    dateTime_(&p->creationDate, &p->creationTime);
-  } else {
-    // use default date/time
-    p->creationDate = FAT_DEFAULT_DATE;
-    p->creationTime = FAT_DEFAULT_TIME;
-  }
-  p->lastAccessDate = p->creationDate;
-  p->lastWriteDate = p->creationDate;
-  p->lastWriteTime = p->creationTime;
-
-  // force write of entry to SD
-  if (!SdVolume::cacheFlush()) return false;
-
-  // open entry in cache
-  return openCachedEntry(dirIndex_, oflag);
+        }
+        // use first entry in cluster
+        dirIndex_ = 0;
+        p = SdVolume::cacheBuffer_.dir;
+    }
+    // initialize as empty file
+    memset(p, 0, sizeof(dir_t));
+    memcpy(p->name, dname, 11);
+    
+    // set timestamps
+    if (dateTime_) {
+        // call user function
+        dateTime_(&p->creationDate, &p->creationTime);
+    } else {
+        // use default date/time
+        p->creationDate = FAT_DEFAULT_DATE;
+        p->creationTime = FAT_DEFAULT_TIME;
+    }
+    p->lastAccessDate = p->creationDate;
+    p->lastWriteDate = p->creationDate;
+    p->lastWriteTime = p->creationTime;
+    
+    // force write of entry to SD
+    if (!SdVolume::cacheFlush()) {
+        DEBUG_PRINTLN("failing to open because  Sd cache flushfailed");
+        return false;
+    }
+    // open entry in cache
+    bool result = openCachedEntry(dirIndex_, oflag);
+    if (!result) {
+        DEBUG_PRINTLN("failing to open because openCachedEntry failed later..");
+    }
+    return result;
 }
 //------------------------------------------------------------------------------
 /**
@@ -474,28 +519,39 @@ uint8_t SdFile::open(SdFile* dirFile, const char* fileName, uint8_t oflag) {
  *
  */
 uint8_t SdFile::open(SdFile* dirFile, uint16_t index, uint8_t oflag) {
-  // error if already open
-  if (isOpen())return false;
+    // error if already open
+    if (isOpen()) {
+        DEBUG_PRINTLN("failing to open because it is open (stupid)");
+        return false;
+        
+    }
+    // don't open existing file if O_CREAT and O_EXCL - user call error
+    if ((oflag & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL)) {
+        DEBUG_PRINTLN("failing to open because it is open (stupid)");
+        return false;
 
-  // don't open existing file if O_CREAT and O_EXCL - user call error
-  if ((oflag & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL)) return false;
-
-  vol_ = dirFile->vol_;
-
-  // seek to location of entry
-  if (!dirFile->seekSet(32 * index)) return false;
-
-  // read entry into cache
-  dir_t* p = dirFile->readDirCache();
-  if (p == NULL) return false;
-
-  // error if empty slot or '.' or '..'
-  if (p->name[0] == DIR_NAME_FREE ||
-      p->name[0] == DIR_NAME_DELETED || p->name[0] == '.') {
-    return false;
-  }
-  // open cached entry
-  return openCachedEntry(index & 0XF, oflag);
+    }
+    vol_ = dirFile->vol_;
+    
+    // seek to location of entry
+    if (!dirFile->seekSet(32 * index)) {
+        DEBUG_PRINTLN("failing to open because seekSet FAILED");
+        return false;
+    }
+    // read entry into cache
+    dir_t* p = dirFile->readDirCache();
+    if (p == NULL) {
+        DEBUG_PRINTLN("failing to open because readDirCache failed");
+        return false;
+    }
+    // error if empty slot or '.' or '..'
+    if (p->name[0] == DIR_NAME_FREE ||
+        p->name[0] == DIR_NAME_DELETED || p->name[0] == '.') {
+        DEBUG_PRINTLN("failing to open because  file is not around or something");
+        return false;
+    }
+    // open cached entry
+    return openCachedEntry(index & 0XF, oflag);
 }
 //------------------------------------------------------------------------------
 // open a cached directory entry. Assumes vol_ is initializes
@@ -742,19 +798,26 @@ int8_t SdFile::readDir(dir_t* dir) {
 // Assumes file is correctly positioned
 dir_t* SdFile::readDirCache(void) {
   // error if not directory
-  if (!isDir()) return NULL;
+    if (!isDir()) {
+        DEBUG_PRINTLN("readDirCache on non dir");
+        return NULL;
 
-  // index of entry in cache
-  uint8_t i = (curPosition_ >> 5) & 0XF;
+    }
+    // index of entry in cache
+    uint8_t i = (curPosition_ >> 5) & 0XF;
 
-  // use read to locate and cache block
-  if (read() < 0) return NULL;
+    // use read to locate and cache block
+    if (read() < 0) {
+        return NULL;
+        DEBUG_PRINTLN("readDirCache no read");
 
-  // advance to next entry
-  curPosition_ += 31;
+    }
 
-  // return pointer to entry
-  return (SdVolume::cacheBuffer_.dir + i);
+    // advance to next entry
+    curPosition_ += 31;
+
+    // return pointer to entry
+    return (SdVolume::cacheBuffer_.dir + i);
 }
 //------------------------------------------------------------------------------
 /**

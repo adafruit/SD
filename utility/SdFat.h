@@ -32,6 +32,10 @@
  * Allow use of deprecated functions if non-zero
  */
 #define ALLOW_DEPRECATED_FUNCTIONS 1
+
+
+
+
 //------------------------------------------------------------------------------
 // forward declaration since SdVolume is used in SdFile
 class SdVolume;
