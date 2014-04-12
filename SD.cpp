@@ -124,8 +124,8 @@ bool getNextPathComponent(char *path, unsigned int *p_offset,
 
 
 
-boolean walkPath(char *filepath, SdFile& parentDir,
-                 boolean (*callback)(SdFile& parentDir,
+boolean walkPath(char *filepath, SdFile *parentDir,
+                 boolean (*callback)(SdFile *parentDir,
                                      char *filePathComponent,
                                      boolean isLastComponent,
                                      void *object),
@@ -173,20 +173,20 @@ boolean walkPath(char *filepath, SdFile& parentDir,
     
     p_child = &subfile1;
     
-    p_parent = &parentDir;
+    p_parent = parentDir;
     
     while (true) {
         
         boolean moreComponents = getNextPathComponent(filepath, &offset, buffer);
         
-        boolean shouldContinue = callback((*p_parent), buffer, !moreComponents, object);
+        boolean shouldContinue = callback(p_parent, buffer, !moreComponents, object);
         
         if (!shouldContinue) {
             // TODO: Don't repeat this code?
             // If it's one we've created then we
             // don't need the parent handle anymore.
-            if (p_parent != &parentDir) {
-                (*p_parent).close();
+            if (p_parent != parentDir) {
+                p_parent->close();
             }
             return false;
         }
@@ -194,20 +194,24 @@ boolean walkPath(char *filepath, SdFile& parentDir,
         if (!moreComponents) {
             break;
         }
+
+//        bool open(SdBaseFile* dirFile, uint16_t index, uint8_t oflag);
+//        bool open(SdBaseFile* dirFile, const char* path, uint8_t oflag);
         
-        boolean exists = (*p_child).open(*p_parent, buffer, O_RDONLY);
+        boolean exists = p_child->open(p_parent, (const char *)buffer, O_RDONLY);
+//        boolean exists = (*p_child).open(*p_parent, buffer, O_RDONLY);
         
         // If it's one we've created then we
         // don't need the parent handle anymore.
-        if (p_parent != &parentDir) {
-            (*p_parent).close();
+        if (p_parent != parentDir) {
+            p_parent->close();
         }
         
         // Handle case when it doesn't exist and we can't continue...
         if (exists) {
             // We alternate between two file handles as we go down
             // the path.
-            if (p_parent == &parentDir) {
+            if (p_parent == parentDir) {
                 p_parent = &subfile2;
             }
             
@@ -219,8 +223,8 @@ boolean walkPath(char *filepath, SdFile& parentDir,
         }
     }
     
-    if (p_parent != &parentDir) {
-        (*p_parent).close(); // TODO: Return/ handle different?
+    if (p_parent != parentDir) {
+        p_parent->close(); // TODO: Return/ handle different?
     }
     
     return true;
@@ -239,7 +243,7 @@ boolean walkPath(char *filepath, SdFile& parentDir,
  
  */
 
-boolean callback_pathExists(SdFile& parentDir, char *filePathComponent,
+boolean callback_pathExists(SdFile *parentDir, char *filePathComponent,
                             boolean isLastComponent, void *object) {
     /*
      
@@ -262,7 +266,7 @@ boolean callback_pathExists(SdFile& parentDir, char *filePathComponent,
 
 
 
-boolean callback_makeDirPath(SdFile& parentDir, char *filePathComponent,
+boolean callback_makeDirPath(SdFile *parentDir, char *filePathComponent,
                              boolean isLastComponent, void *object) {
     /*
      
@@ -286,7 +290,7 @@ boolean callback_makeDirPath(SdFile& parentDir, char *filePathComponent,
 
 /*
  
- boolean callback_openPath(SdFile& parentDir, char *filePathComponent,
+ boolean callback_openPath(SdFile *parentDir, char *filePathComponent,
  boolean isLastComponent, void *object) {
  
  Callback used to open a file specified by a filepath that may
@@ -317,7 +321,7 @@ boolean callback_makeDirPath(SdFile& parentDir, char *filePathComponent,
 
 
 
-boolean callback_remove(SdFile& parentDir, char *filePathComponent,
+boolean callback_remove(SdFile *parentDir, char *filePathComponent,
                         boolean isLastComponent, void *object) {
     if (isLastComponent) {
         return SdFile::remove(parentDir, filePathComponent);
@@ -325,7 +329,7 @@ boolean callback_remove(SdFile& parentDir, char *filePathComponent,
     return true;
 }
 
-boolean callback_rmdir(SdFile& parentDir, char *filePathComponent,
+boolean callback_rmdir(SdFile *parentDir, char *filePathComponent,
                        boolean isLastComponent, void *object) {
     if (isLastComponent) {
         SdFile f;
@@ -349,9 +353,7 @@ boolean SDClass::begin(uint8_t csPin) {
      Return true if initialization succeeds, false otherwise.
      
      */
-    return card.init(SPI_HALF_SPEED) &&
-    volume.init(card) &&
-    root.openRoot(volume);
+    return card.init(SPI_HALF_SPEED, csPin) && volume.init(&card) && root.openRoot(&volume);
 }
 
 
@@ -462,14 +464,14 @@ File SDClass::open(const char *filepath, uint8_t mode) {
     
     // there is a special case for the Root directory since its a static dir
     if (parentdir.isRoot()) {
-        if (!file.open(SD.root, filepath, mode)) {
+        if (!file.open(&SD.root, filepath, mode)) {
             // failed to open the file :(
             DEBUG_PRINTLN("SD: parent is root...failed to open");
             return File();
         }
         // dont close the root!
     } else {
-        if ( ! file.open(parentdir, filepath, mode)) {
+        if ( !file.open(&parentdir, filepath, mode)) {
             DEBUG_PRINTLN("SD: parent is NOT root...failed to open");
             return File();
         }
@@ -536,11 +538,11 @@ boolean SDClass::exists(char *filepath) {
      Returns true if the supplied file path exists.
      
      */
-    return walkPath(filepath, root, callback_pathExists);
+    return walkPath(filepath, &root, callback_pathExists);
 }
 
 
-//boolean SDClass::exists(char *filepath, SdFile& parentDir) {
+//boolean SDClass::exists(char *filepath, SdFile *parentDir) {
 //  /*
 //
 //     Returns true if the supplied file path rooted at `parentDir`
@@ -559,7 +561,7 @@ boolean SDClass::mkdir(char *filepath) {
      A rough equivalent to `mkdir -p`.
      
      */
-    return walkPath(filepath, root, callback_makeDirPath);
+    return walkPath(filepath, &root, callback_makeDirPath);
 }
 
 boolean SDClass::rmdir(char *filepath) {
@@ -570,11 +572,11 @@ boolean SDClass::rmdir(char *filepath) {
      A rough equivalent to `mkdir -p`.
      
      */
-    return walkPath(filepath, root, callback_rmdir);
+    return walkPath(filepath, &root, callback_rmdir);
 }
 
 boolean SDClass::remove(char *filepath) {
-    return walkPath(filepath, root, callback_remove);
+    return walkPath(filepath, &root, callback_remove);
 }
 
 bool File::getNextFilename(char *buffer) {
