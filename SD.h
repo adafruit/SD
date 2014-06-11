@@ -78,6 +78,9 @@ public:
   // before other methods are used.
   boolean begin(uint8_t csPin = SD_CHIP_SELECT_PIN, int8_t mosi = -1, int8_t miso = -1, int8_t sck = -1);
   
+  //call this when a card is removed. It will allow you to inster and initialise a new card.
+  void end(); 
+  
   // Open the specified file/directory with the supplied mode (e.g. read or
   // write, etc). Returns a File object for interacting with the file.
   // Note that currently only one file can be open at a time.

@@ -345,6 +345,11 @@ boolean SDClass::begin(uint8_t csPin, int8_t mosi, int8_t miso, int8_t sck) {
          root.openRoot(volume);
 }
 
+//call this when a card is removed. It will allow you to inster and initialise a new card.
+void SDClass::end()
+{
+  root.close();
+}
 
 
 // this little helper is used to traverse paths
