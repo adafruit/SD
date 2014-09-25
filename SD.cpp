@@ -52,9 +52,10 @@
 
 #include "SD.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG
+#warning "DEBUG CODE IS ON!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! see SD.cpp"
 #define DEBUG_PRINTLN(a) Serial.println(a)
 #define DEBUG_PRINTF(a, ...) Serial.printf(a, ##__VA_ARGS__)
 #else
@@ -353,7 +354,25 @@ boolean SDClass::begin(uint8_t speed, uint8_t csPin) {
      Return true if initialization succeeds, false otherwise.
      
      */
-    return card.init(speed, csPin) && volume.init(&card) && root.openRoot(&volume);
+    bool success = card.init(speed, csPin);
+#if DEBUG
+    if (!success) {
+        DEBUG_PRINTLN("card.init failed");
+    }
+#endif
+    success = success && volume.init(&card);
+#if DEBUG
+    if (!success) {
+        DEBUG_PRINTLN("volume.init failed");
+    }
+#endif
+    success = success && root.openRoot(&volume);
+#if DEBUG
+    if (!success) {
+        DEBUG_PRINTLN("openRoot failed");
+    }
+#endif
+    return success;
 }
 
 
