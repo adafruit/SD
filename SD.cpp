@@ -357,7 +357,9 @@ boolean SDClass::begin(uint8_t speed, uint8_t csPin) {
     bool success = card.init(speed, csPin);
 #if DEBUG
     if (!success) {
-        DEBUG_PRINTLN("card.init failed");
+        DEBUG_PRINTF("card.init failed :");
+        Serial.print(card.errorCode());
+        Serial.println();
     }
 #endif
     success = success && volume.init(&card);
@@ -369,7 +371,9 @@ boolean SDClass::begin(uint8_t speed, uint8_t csPin) {
     success = success && root.openRoot(&volume);
 #if DEBUG
     if (!success) {
-        DEBUG_PRINTLN("openRoot failed");
+        DEBUG_PRINTF("openRoot failed :");
+        Serial.print(card.errorCode());
+        Serial.println();
     }
 #endif
     return success;
@@ -468,7 +472,7 @@ File SDClass::open(const char *filepath, uint8_t mode) {
     
     if (!filepath[0]) {
         // it was the directory itself!
-        DEBUG_PRINTLN("SD: Returning root??");
+        DEBUG_PRINTLN("SD: Returning root");
         return File(parentdir, "/");
     }
     
