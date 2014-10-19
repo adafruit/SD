@@ -281,6 +281,7 @@ uint8_t Sd2Card::eraseSingleBlockEnable(void) {
  * can be determined by calling errorCode() and errorData().
  */
 uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin, int8_t misoPin, int8_t clockPin) {
+  blockSize_ = 512;
   writeCRC_ = errorCode_ = inBlock_ = partialBlockRead_ = type_ = 0;
   chipSelectPin_ = chipSelectPin;
   mosiPin_ = mosiPin;
@@ -411,8 +412,8 @@ void Sd2Card::partialBlockRead(uint8_t value) {
 }
 //------------------------------------------------------------------------------
 /**
- * Read a 512 byte block from an SD card device.
- *
+ * Read a block from an SD card device where the number of bytes is defined.
+ * by the number set in blockSize.
  * \param[in] block Logical block to be read.
  * \param[out] dst Pointer to the location that will receive the data.
 
@@ -420,11 +421,11 @@ void Sd2Card::partialBlockRead(uint8_t value) {
  * the value zero, false, is returned for failure.
  */
 uint8_t Sd2Card::readBlock(uint32_t block, uint8_t* dst) {
-  return readData(block, 0, 512, dst);
+  return readData(block, 0, blockSize_, dst);
 }
 //------------------------------------------------------------------------------
 /**
- * Read part of a 512 byte block from an SD card.
+ * Read part of a block[blockSize bytes] from an SD card.
  *
  * \param[in] block Logical block to be read.
  * \param[in] offset Number of bytes to skip at start of block
@@ -437,7 +438,7 @@ uint8_t Sd2Card::readData(uint32_t block,
         uint16_t offset, uint16_t count, uint8_t* dst) {
   uint16_t n;
   if (count == 0) return true;
-  if ((count + offset) > 512) {
+  if ((count + offset) > blockSize_) {
     goto fail;
   }
   if (!inBlock_ || block != block_ || offset < offset_) {
@@ -488,7 +489,7 @@ uint8_t Sd2Card::readData(uint32_t block,
 #endif  // OPTIMIZE_HARDWARE_SPI
 
   offset_ += count;
-  if (!partialBlockRead_ || offset_ >= 512) {
+  if (!partialBlockRead_ || offset_ >= blockSize_) {
     // read rest of data, checksum and set chip select high
     readEnd();
   }
@@ -683,7 +684,7 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
   if(writeCRC_) {
     int16_t i, x;
     // CRC16 code via Scott Dattalo www.dattalo.com
-    for(crc=i=0; i<512; i++) {
+    for(crc=i=0; i<blockSize_; i++) {
       x   = ((crc >> 8) ^ src[i]) & 0xff;
       x  ^= x >> 4;
       crc = (crc << 8) ^ (x << 12) ^ (x << 5) ^ x;
@@ -698,7 +699,7 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
   SPDR = token;
 
   // send two byte per iteration
-  for (uint16_t i = 0; i < 512; i += 2) {
+  for (uint16_t i = 0; i < blockSize_; i += 2) {
     while (!(SPSR & (1 << SPIF)));
     SPDR = src[i];
     while (!(SPSR & (1 << SPIF)));
@@ -710,7 +711,7 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
 
 #else  // OPTIMIZE_HARDWARE_SPI
   spiSend(token);
-  for (uint16_t i = 0; i < 512; i++) {
+  for (uint16_t i = 0; i < blockSize_; i++) {
     spiSend(src[i]);
   }
 #endif  // OPTIMIZE_HARDWARE_SPI
@@ -780,6 +781,25 @@ uint8_t Sd2Card::writeStop(void) {
   error(SD_CARD_ERROR_STOP_TRAN);
   chipSelectHigh();
   return false;
+}
+
+uint16_t Sd2Card::getBlockSize(void) const {
+  return blockSize_;
+}
+
+/* Sets the blocksize.
+ * \note This function only sets the blockSize if
+ * the input is non-zero and is a power of 2
+ *
+ * \return The value one, true, is returned for success and
+ * the value zero, false, is returned for failure.
+ */
+bool Sd2Card::setBlockSize(const uint16_t blkSz) {
+  if (!(blkSz && (blkSz & (blkSz - 1)))) // Allow only non-zero, powers of 2
+    return false;
+
+  blockSize_ = blkSz;
+  return true;
 }
 
 void Sd2Card::enableCRC(uint8_t mode) {

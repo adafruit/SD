@@ -214,6 +214,9 @@ class Sd2Card {
   uint8_t writeStop(void);
   void    enableCRC(uint8_t mode);
 
+  uint16_t getBlockSize() const;
+  bool setBlockSize(const uint16_t blkSz);
+
 private:
   uint32_t block_;
   uint8_t chipSelectPin_;
@@ -224,6 +227,7 @@ private:
   uint8_t status_;
   uint8_t type_;
   uint8_t writeCRC_;
+  uint16_t blockSize_;
 
   
   // private functions
