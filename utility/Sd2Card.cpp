@@ -281,7 +281,6 @@ uint8_t Sd2Card::eraseSingleBlockEnable(void) {
  * can be determined by calling errorCode() and errorData().
  */
 uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin, int8_t misoPin, int8_t clockPin) {
-  blockSize_ = 512;
   writeCRC_ = errorCode_ = inBlock_ = partialBlockRead_ = type_ = 0;
   chipSelectPin_ = chipSelectPin;
   mosiPin_ = mosiPin;
@@ -295,6 +294,11 @@ uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin, 
   pinMode(chipSelectPin_, OUTPUT);
   chipSelectHigh();
   
+  if (!setBlockSize(512)) {
+    error(NULL);
+    goto fail;
+  }
+
   if (clockPin != -1) {
     // use slow bitbang mode
     pinMode(misoPin_, INPUT);
@@ -795,7 +799,10 @@ uint16_t Sd2Card::getBlockSize(void) const {
  * the value zero, false, is returned for failure.
  */
 bool Sd2Card::setBlockSize(const uint16_t blkSz) {
-  if (!(blkSz && (blkSz & (blkSz - 1)))) // Allow only non-zero, powers of 2
+  if (!blkSz)
+    return false;
+  // Could have used __builtin_popcount but not sure if it is portable
+  else if (blkSz & (blkSz - 1)) // Allow only powers of 2
     return false;
 
   blockSize_ = blkSz;
