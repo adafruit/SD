@@ -35,6 +35,9 @@ public:
     File(SdFile f, const char *name);     // wraps an underlying SdFile
     File(void);      // 'empty' constructor
     ~File(void);     // destructor
+    
+    void setSdFile(SdFile *f);
+    
     virtual size_t write(uint8_t);
     virtual size_t write(const uint8_t *buf, size_t size);
     virtual int read();
@@ -49,11 +52,13 @@ public:
     operator bool();
     char *name();
     
+    bool isValid() { return _file != NULL; }
+    
     boolean isDirectory(void);
     File openNextFile(uint8_t mode = O_RDONLY);
     
     // Pass a buffer of PATH_COMPONENT_BUFFER_LEN size
-    bool getNextFilename(char *buffer);
+//    bool getNextFilename(char *buffer);
     
     void moveToStartOfDirectory();
     

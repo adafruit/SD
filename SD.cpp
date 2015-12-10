@@ -593,7 +593,37 @@ boolean SDClass::remove(char *filepath) {
 }
 
 
-bool File::getNextFilename(char *buffer) {
+//bool File::getNextFilename(char *buffer) {
+//    dir_t p;
+//    while (_file->readDir(&p) > 0) {
+//        // done if past last used entry
+//        if (p.name[0] == DIR_NAME_FREE) {
+//            break; // done
+//        }
+//        
+//        // skip deleted entry and entries for . and  ..
+//        if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') {
+//            //Serial.println("dots");
+//            continue;
+//        }
+//        
+//        // only list subdirectories and files
+//        if (!DIR_IS_FILE_OR_SUBDIR(&p)) {
+//            //Serial.println("notafile");
+//            continue;
+//        }
+//        
+//        // print file name with possible blank fill
+//        _file->dirName(p, buffer);
+//        return true;
+//    }
+//    return false;
+//}
+
+// This is stupid, and i rewrote it to use local memory better
+File File::openNextFile(uint8_t mode) {
+    File result = File();
+
     dir_t p;
     while (_file->readDir(&p) > 0) {
         // done if past last used entry
@@ -614,20 +644,30 @@ bool File::getNextFilename(char *buffer) {
         }
         
         // print file name with possible blank fill
-        _file->dirName(p, buffer);
-        return true;
-    }
-    return false;
-}
-File File::openNextFile(uint8_t mode) {
-    char name[PATH_COMPONENT_BUFFER_LEN];
-    if (getNextFilename(name)) {
+        char *name = result.name();
+        _file->dirName(p, name);
+        // See if we can open it..
+        
         SdFile f;
         if (f.open(_file, name, mode)) {
-            return File(f, name);
+            result.setSdFile(&f); // copies it
+            // name already set!
         }
+        return result;
     }
-    return File();
+    
+    return result;
+    
+    
+    
+//    char name[PATH_COMPONENT_BUFFER_LEN];
+//    if (getNextFilename(name)) {
+//        SdFile f;
+//        if (f.open(_file, name, mode)) {
+//            return File(f, name); /// Creates a buffer!! so why don't we just use it
+//        }
+//    }
+//    return File(); // also creates a buffer of PATH_COMPONENT_BUFFER_LEN...we should just use it's buffer...
 }
 
 void File::moveToStartOfDirectory() {

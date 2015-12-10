@@ -18,12 +18,24 @@
    uint8_t nfilecount=0;
 */
 
+static inline SdFile *_copySdFile(SdFile *f) {
+    SdFile *result = (SdFile *)malloc(sizeof(SdFile));
+    memcpy(result, f, sizeof(SdFile));
+    return result;
+}
+
+void File::setSdFile(SdFile *f) {
+    if (_file) {
+        free(_file);
+    }
+    _file = _copySdFile(f);
+}
+
+
 File::File(SdFile f, const char *n) {
   // oh man you are kidding me, new() doesnt exist? Ok we do it by hand!
-  _file = (SdFile *)malloc(sizeof(SdFile)); 
+  _file = _copySdFile(&f);
   if (_file) {
-    memcpy(_file, &f, sizeof(SdFile));
-    
     strncpy(_name, n, 12);
     _name[12] = 0;
     
@@ -44,6 +56,11 @@ File::File(void) {
 }
 
 File::~File(void) {
+    if (_file) {
+        free(_file);
+        _file = 0;
+    }
+    
   //  Serial.print("Deleted file object");
 }
 
