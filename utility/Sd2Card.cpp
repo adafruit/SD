@@ -25,7 +25,7 @@
 #endif
 #include "Sd2Card.h"
 //------------------------------------------------------------------------------
-#ifdef __arm__
+#if defined(__arm__) && !defined(TEENSYDUINO)
 static int8_t mosiPin_, misoPin_, clockPin_;
 static volatile RwReg *mosiport, *clkport, *misoport;
 static uint32_t mosipinmask, clkpinmask, misopinmask;
