@@ -904,7 +904,7 @@ uint8_t SdFile::rmRfStar(void) {
       if (!f.remove()) return false;
     }
     // position to next entry if required
-    if (curPosition_ != (32*(index + 1))) {
+    if (curPosition_ != (32U*(index + 1U))) {
       if (!seekSet(32*(index + 1))) return false;
     }
   }

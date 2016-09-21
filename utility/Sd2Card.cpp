@@ -435,7 +435,6 @@ uint8_t Sd2Card::readBlock(uint32_t block, uint8_t* dst) {
  */
 uint8_t Sd2Card::readData(uint32_t block,
         uint16_t offset, uint16_t count, uint8_t* dst) {
-  uint16_t n;
   if (count == 0) return true;
   if ((count + offset) > 512) {
     goto fail;
@@ -465,7 +464,7 @@ uint8_t Sd2Card::readData(uint32_t block,
     SPDR = 0XFF;
   }
   // transfer data
-  n = count - 1;
+  uint16_t n = count - 1;
   for (uint16_t i = 0; i < n; i++) {
     while (!(SPSR & (1 << SPIF)));
     dst[i] = SPDR;
@@ -568,7 +567,7 @@ uint8_t Sd2Card::setSckRate(uint8_t sckRateID) {
   SPCR |= (sckRateID & 4 ? (1 << SPR1) : 0)
     | (sckRateID & 2 ? (1 << SPR0) : 0);
 #else // USE_SPI_LIB
-  int v;
+  int v = 0; // intialize to 0 so that the compiler does not issue a warning
 #ifdef SPI_CLOCK_DIV128
   switch (sckRateID) {
     case 0: v=SPI_CLOCK_DIV2; break;
