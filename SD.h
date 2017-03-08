@@ -52,6 +52,7 @@ public:
   boolean seek(uint32_t pos);
   uint32_t position();
   uint32_t size();
+  uint32_t count(char *mode);	
   void close();
   operator bool();
   char * name();

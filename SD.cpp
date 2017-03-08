@@ -612,9 +612,46 @@ File File::openNextFile(uint8_t mode) {
       return File();
     }
   }
-
+  
   //Serial.println("nothing");
   return File();
+}
+
+ /*
+  Allows users to count files, folders or everything in folder that is opened ie. File root = SD.open("/"); shall
+  open root and then you can count root.count() or use modifier "FILES" or "FOLDERS".
+  Function does not count removed or dots in the folder.
+  */
+uint32_t File::count(char *mode = "") {
+  dir_t p;
+  uint32_t entries = 0;
+  uint32_t folders = 0;
+  
+    //Serial.print("\t\treading dir...");
+  while (_file->readDir(&p) > 0) {
+
+    // skip deleted entry and entries for . and  ..
+    if (p.name[0] == DIR_NAME_DELETED || p.name[0] == '.') {
+      //Serial.println("dots");
+      continue;
+    }
+
+    // only list subdirectories and files
+    if (!DIR_IS_FILE_OR_SUBDIR(&p)) {
+      //Serial.println("notafile");
+      continue;
+    }
+	
+	if (DIR_IS_SUBDIR(&p)) folders++;
+	 
+	entries++;
+
+  }
+	
+  if (mode == "FOLDERS") return folders;
+  else if (mode == "FILES") return entries - folders;
+  else return entries;
+	
 }
 
 void File::rewindDirectory(void) {  
